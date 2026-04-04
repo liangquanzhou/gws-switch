@@ -1,0 +1,7 @@
+#!/bin/zsh
+
+set -euo pipefail
+
+ROOT="${0:A:h:h}"
+source "${ROOT}/src/gws_switch/common.zsh"
+gws_switch_cmd_gws "$@"

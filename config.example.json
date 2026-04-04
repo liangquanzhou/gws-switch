@@ -1,0 +1,11 @@
+{
+  "raw_gws_bin": "/opt/homebrew/bin/gws",
+  "config_dir": "/path/to/.config/gws",
+  "gmail_config_dir": "/path/to/.config/gws-gmail",
+  "accounts_dir": "/path/to/.config/gws/accounts",
+  "state_file": "/path/to/.config/gws/.current_account",
+  "base_client_secret": "/path/to/.config/gws/client_secret.json",
+  "secrets_file": "/path/to/.config/zsh/secrets.zsh",
+  "manifest_file": "/path/to/.config/gws-switch/accounts.json",
+  "default_account": "work-or-personal@example.com"
+}
