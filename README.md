@@ -2,7 +2,7 @@
 
 Local multi-account wrapper for `googleworkspace-cli` (`gws`).
 
-面向个人/团队内部的 Google Workspace 多账号切换包装层。
+Google Workspace 多账号切换包装层。
 它复用上游 `gws` 的认证和 keyring 机制，只补多账号切换、配置管理和诊断能力。
 
 ## Commands
@@ -18,6 +18,13 @@ Local multi-account wrapper for `googleworkspace-cli` (`gws`).
 - `gws-switch-status [account|gmail|didi]`
 - `gws-switch-doctor [account|gmail|didi]`
 - `gws-switch-config-init [--force] [--path <file>]`
+
+Main entry behavior:
+
+- `gws-switch --help`
+- `gws-switch --version`
+- `gws-switch raw <gws args...>`
+- `gws-switch <upstream gws args...>`
 
 ## 中文说明
 
@@ -39,9 +46,15 @@ Local multi-account wrapper for `googleworkspace-cli` (`gws`).
 
 适用范围：
 
-- 个人机器
-- 团队内部少量复用
+- 个人多账号使用
+- 小团队共享同一套命令习惯
 - 已经安装过上游 `gws` 的环境
+
+前置条件：
+
+- 已安装上游 `googleworkspace-cli` / `gws`
+- 系统可用 `zsh`
+- 已具备 Google OAuth 授权能力
 
 当前还不适合直接当成“开箱即用的公开软件”理解，原因主要是：
 
@@ -74,6 +87,8 @@ Local multi-account wrapper for `googleworkspace-cli` (`gws`).
 brew tap liangquanzhou/tap
 brew install liangquanzhou/tap/gws-switch
 ```
+
+如果你还没有安装上游 `gws`，需要先单独安装它；`gws-switch` 是包装层，不会替代上游客户端本身。
 
 安装后可执行文件会在 Homebrew 前缀下，例如：
 
@@ -108,6 +123,7 @@ Optional config file:
 Example fields:
 
 - `raw_gws_bin`
+- `app_config_dir`
 - `config_dir`
 - `gmail_config_dir`
 - `accounts_dir`
@@ -123,6 +139,16 @@ Bootstrap or refresh the local config file:
 gws-switch-config-init
 gws-switch-config-init --force
 ```
+
+## Testing
+
+Local smoke test:
+
+```bash
+zsh scripts/test.sh
+```
+
+This test suite uses a fake upstream `gws` binary and temporary config directories, so it does not depend on your real Google credentials.
 
 ## Publish Notes
 
@@ -167,7 +193,7 @@ If you publish the repository, also check git author identity, because commit me
 
 ## Notes
 
-- wraps the upstream binary at `/opt/homebrew/bin/gws`
+- auto-detects the upstream `gws` binary from common install locations when possible
 - uses upstream keyring/encrypted credential storage
 - keeps dotfiles as a thin compatibility layer only
 - includes a stable Homebrew formula plus optional `--HEAD` install path for development
@@ -187,3 +213,13 @@ Then update the tap formula with:
 - `version`
 
 Track released changes in [CHANGELOG.md](./CHANGELOG.md).
+
+## License
+
+MIT. See [LICENSE](./LICENSE).
+
+## Project Docs
+
+- [CHANGELOG.md](./CHANGELOG.md)
+- [CONTRIBUTING.md](./CONTRIBUTING.md)
+- [SECURITY.md](./SECURITY.md)

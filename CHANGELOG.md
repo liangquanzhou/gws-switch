@@ -4,6 +4,21 @@ All notable changes to `gws-switch` will be documented in this file.
 
 The format is based on Keep a Changelog.
 
+## [0.1.2] - 2026-04-05
+
+### Added
+
+- Built-in `help` and `version` output on the main `gws-switch` command.
+- Local smoke tests with a fake upstream `gws` binary.
+- GitHub Actions CI for the main repository.
+- Public project documents: `CONTRIBUTING.md`, `SECURITY.md`, and `LICENSE`.
+
+### Changed
+
+- Improved upstream `gws` binary detection to work across common install locations.
+- Added `app_config_dir` to generated/example config.
+- Expanded release packaging to include tests, docs, and project metadata.
+
 ## [0.1.1] - 2026-04-05
 
 ### Added

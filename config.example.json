@@ -1,5 +1,6 @@
 {
-  "raw_gws_bin": "/opt/homebrew/bin/gws",
+  "raw_gws_bin": "/path/to/gws",
+  "app_config_dir": "/path/to/.config/gws-switch",
   "config_dir": "/path/to/.config/gws",
   "gmail_config_dir": "/path/to/.config/gws-gmail",
   "accounts_dir": "/path/to/.config/gws/accounts",

@@ -17,13 +17,80 @@ typeset -g GWS_SWITCH_MANIFEST_FILE="${GWS_SWITCH_MANIFEST_FILE:-}"
 typeset -g GWS_SWITCH_DEFAULT_ACCOUNT="${GWS_SWITCH_DEFAULT_ACCOUNT:-}"
 typeset -g GWS_SWITCH_CONFIG_LOADED="${GWS_SWITCH_CONFIG_LOADED:-0}"
 
+gws_switch_detect_raw_bin() {
+  emulate -L zsh
+
+  local candidate
+  for candidate in \
+    "${GWS_SWITCH_RAW_BIN:-}" \
+    /opt/homebrew/bin/gws \
+    /usr/local/bin/gws \
+    "${commands[gws]:-}"
+  do
+    [[ -n "$candidate" ]] || continue
+    [[ -x "$candidate" ]] || continue
+    print -r -- "$candidate"
+    return 0
+  done
+
+  return 1
+}
+
+gws_switch_version() {
+  emulate -L zsh
+
+  local version_file="${GWS_SWITCH_ROOT}/VERSION"
+  if [[ -f "$version_file" ]]; then
+    <"$version_file"
+    return 0
+  fi
+
+  print -r -- "0.0.0-dev"
+}
+
+gws_switch_print_usage() {
+  emulate -L zsh
+
+  cat <<EOF
+gws-switch $(gws_switch_version)
+
+Usage:
+  gws-switch help
+  gws-switch version
+  gws-switch who
+  gws-switch accounts
+  gws-switch use <account|gmail|didi>
+  gws-switch login <account|gmail|didi>
+  gws-switch status [account|gmail|didi]
+  gws-switch doctor [account|gmail|didi]
+  gws-switch do <account|gmail|didi> <gws args...>
+  gws-switch config-init [--force] [--path <file>]
+  gws-switch raw <gws args...>
+  gws-switch <upstream gws args...>
+
+Shortcuts:
+  gws-switch-gmail
+  gws-switch-didi
+  gws-switch-who
+  gws-switch-accounts
+  gws-switch-status
+  gws-switch-doctor
+  gws-switch-config-init
+
+Notes:
+  - Public commands use the gws-switch-* prefix to avoid shadowing upstream gws.
+  - Upstream gws is auto-detected from common Homebrew/system locations when possible.
+  - Use "gws-switch raw ..." to bypass account routing and call upstream gws directly.
+EOF
+}
+
 gws_switch_apply_config() {
   emulate -L zsh
 
   [[ "${GWS_SWITCH_CONFIG_LOADED:-0}" == "1" ]] && return 0
 
   local xdg_config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
-  local raw_gws_bin="${GWS_SWITCH_RAW_BIN:-/opt/homebrew/bin/gws}"
+  local raw_gws_bin="${GWS_SWITCH_RAW_BIN:-}"
   local app_config_dir="${GWS_SWITCH_APP_CONFIG_DIR:-${xdg_config_home}/gws-switch}"
   local config_file="${GWS_SWITCH_CONFIG_FILE:-${app_config_dir}/config.json}"
   local config_dir="${GWS_SWITCH_CONFIG_DIR:-${xdg_config_home}/gws}"
@@ -72,6 +139,10 @@ PY
     base_client_secret="${base_client_secret:-${config_dir}/client_secret.json}"
     manifest_file="${manifest_file:-${app_config_dir}/accounts.json}"
     config_file="${config_file:-${app_config_dir}/config.json}"
+  fi
+
+  if [[ -z "$raw_gws_bin" || ! -x "$raw_gws_bin" ]]; then
+    raw_gws_bin="$(gws_switch_detect_raw_bin || true)"
   fi
 
   typeset -g GWS_SWITCH_RAW_BIN="$raw_gws_bin"
@@ -536,7 +607,7 @@ gws_switch_run_with_account() {
 
   if [[ -z "$account" ]]; then
     print -u2 -- "gws: no active account"
-    print -u2 -- "Use gws-gmail / gws-didi / gws-login first."
+    print -u2 -- "Use gws-switch-gmail / gws-switch-didi / gws-switch-login first."
     return 1
   fi
 
@@ -578,6 +649,63 @@ gws_switch_run_auth() {
 gws_switch_cmd_gws() {
   emulate -L zsh
 
+  case "${1:-}" in
+    ""|help|--help|-h)
+      gws_switch_print_usage
+      return 0
+      ;;
+    version|--version|-V)
+      print -r -- "gws-switch $(gws_switch_version)"
+      return 0
+      ;;
+    use|as)
+      shift
+      gws_switch_cmd_use "$@"
+      return
+      ;;
+    who)
+      shift
+      gws_switch_cmd_who "$@"
+      return
+      ;;
+    accounts)
+      shift
+      gws_switch_cmd_accounts "$@"
+      return
+      ;;
+    do)
+      shift
+      gws_switch_cmd_do "$@"
+      return
+      ;;
+    login)
+      shift
+      gws_switch_cmd_login "$@"
+      return
+      ;;
+    status)
+      shift
+      gws_switch_cmd_status "$@"
+      return
+      ;;
+    doctor)
+      shift
+      gws_switch_cmd_doctor "$@"
+      return
+      ;;
+    config-init)
+      shift
+      gws_switch_cmd_config_init "$@"
+      return
+      ;;
+    raw)
+      shift
+      gws_switch_require_raw_bin || return 1
+      gws_switch_proxy_env "$GWS_SWITCH_RAW_BIN" "$@"
+      return
+      ;;
+  esac
+
   gws_switch_require_raw_bin || return 1
 
   if [[ -n "${GOOGLE_WORKSPACE_CLI_TOKEN:-}" ]]; then
@@ -596,6 +724,11 @@ gws_switch_cmd_gws() {
 gws_switch_cmd_use() {
   emulate -L zsh
 
+  if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+    print -r -- "Usage: gws-switch use <account|gmail|didi>"
+    return 0
+  fi
+
   if [[ "${1:-}" == "--clear" ]]; then
     unset GOOGLE_WORKSPACE_CLI_ACCOUNT
     [[ -f "$GWS_SWITCH_STATE_FILE" ]] && rm -f -- "$GWS_SWITCH_STATE_FILE"
@@ -612,6 +745,11 @@ gws_switch_cmd_use() {
 
 gws_switch_cmd_who() {
   emulate -L zsh
+
+  if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+    print -r -- "Usage: gws-switch who"
+    return 0
+  fi
 
   local account source alias_name
   account="$(gws_switch_effective_account)"
@@ -632,6 +770,11 @@ gws_switch_cmd_who() {
 
 gws_switch_cmd_accounts() {
   emulate -L zsh
+
+  if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+    print -r -- "Usage: gws-switch accounts"
+    return 0
+  fi
 
   local current source account marker alias_name
   current="$(gws_switch_effective_account)"
@@ -654,6 +797,11 @@ gws_switch_cmd_accounts() {
 gws_switch_cmd_do() {
   emulate -L zsh
 
+  if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+    print -r -- "Usage: gws-switch do <account|gmail|didi> <gws args...>"
+    return 0
+  fi
+
   local account
   account="$(gws_switch_resolve_account "${1:-}")" || return 1
   shift || return 1
@@ -668,6 +816,11 @@ gws_switch_cmd_do() {
 
 gws_switch_cmd_login() {
   emulate -L zsh
+
+  if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+    print -r -- "Usage: gws-switch login <account|gmail|didi> [upstream auth login args...]"
+    return 0
+  fi
 
   gws_switch_require_raw_bin || return 1
 
@@ -729,6 +882,11 @@ PY
 
 gws_switch_cmd_status() {
   emulate -L zsh
+
+  if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+    print -r -- "Usage: gws-switch status [account|gmail|didi]"
+    return 0
+  fi
 
   local account source creds_file cache_file cache_age alias_name config_dir runtime_credentials
   local client_id client_secret refresh_token
@@ -794,6 +952,11 @@ PY
 
 gws_switch_cmd_doctor() {
   emulate -L zsh
+
+  if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+    print -r -- "Usage: gws-switch doctor [account|gmail|didi]"
+    return 0
+  fi
 
   local account source alias_name config_dir runtime_credentials runtime_kind
   local raw_bin_status config_file_status manifest_status state_status auth_probe
@@ -893,6 +1056,10 @@ gws_switch_cmd_config_init() {
 
   while (( $# > 0 )); do
     case "$1" in
+      --help|-h)
+        print -r -- "Usage: gws-switch config-init [--force] [--path <file>]"
+        return 0
+        ;;
       --force) force=1 ;;
       --path)
         shift || {
@@ -917,7 +1084,7 @@ gws_switch_cmd_config_init() {
     return 1
   fi
 
-  python3 - "$target" "$GWS_SWITCH_RAW_BIN" "$GWS_SWITCH_CONFIG_DIR" "$GWS_SWITCH_GMAIL_CONFIG_DIR" "$GWS_SWITCH_ACCOUNTS_DIR" "$GWS_SWITCH_STATE_FILE" "$GWS_SWITCH_BASE_CLIENT_SECRET" "$GWS_SWITCH_SECRETS_FILE" "$GWS_SWITCH_MANIFEST_FILE" "$(gws_switch_read_default_account)" <<'PY'
+  python3 - "$target" "$GWS_SWITCH_RAW_BIN" "$GWS_SWITCH_APP_CONFIG_DIR" "$GWS_SWITCH_CONFIG_DIR" "$GWS_SWITCH_GMAIL_CONFIG_DIR" "$GWS_SWITCH_ACCOUNTS_DIR" "$GWS_SWITCH_STATE_FILE" "$GWS_SWITCH_BASE_CLIENT_SECRET" "$GWS_SWITCH_SECRETS_FILE" "$GWS_SWITCH_MANIFEST_FILE" "$(gws_switch_read_default_account)" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -925,14 +1092,15 @@ from pathlib import Path
 target = Path(sys.argv[1])
 payload = {
     "raw_gws_bin": sys.argv[2],
-    "config_dir": sys.argv[3],
-    "gmail_config_dir": sys.argv[4],
-    "accounts_dir": sys.argv[5],
-    "state_file": sys.argv[6],
-    "base_client_secret": sys.argv[7],
-    "secrets_file": sys.argv[8],
-    "manifest_file": sys.argv[9],
-    "default_account": sys.argv[10],
+    "app_config_dir": sys.argv[3],
+    "config_dir": sys.argv[4],
+    "gmail_config_dir": sys.argv[5],
+    "accounts_dir": sys.argv[6],
+    "state_file": sys.argv[7],
+    "base_client_secret": sys.argv[8],
+    "secrets_file": sys.argv[9],
+    "manifest_file": sys.argv[10],
+    "default_account": sys.argv[11],
 }
 target.write_text(json.dumps(payload, indent=2) + "\n")
 PY

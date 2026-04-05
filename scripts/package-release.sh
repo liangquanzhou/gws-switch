@@ -19,8 +19,12 @@ cp -R \
   "${ROOT}/scripts" \
   "${ROOT}/.github" \
   "${ROOT}/CHANGELOG.md" \
+  "${ROOT}/CONTRIBUTING.md" \
+  "${ROOT}/LICENSE" \
   "${ROOT}/README.md" \
+  "${ROOT}/SECURITY.md" \
   "${ROOT}/config.example.json" \
+  "${ROOT}/tests" \
   "${ROOT}/VERSION" \
   "${STAGE_DIR}/"
 
