@@ -66,6 +66,25 @@ Local multi-account wrapper for `googleworkspace-cli` (`gws`).
 
 ## Install
 
+推荐正式使用 Homebrew 安装。这样本地与发布版的命令、目录结构和升级方式保持一致。
+
+### Homebrew
+
+```bash
+brew tap liangquanzhou/tap
+brew install liangquanzhou/tap/gws-switch
+```
+
+安装后可执行文件会在 Homebrew 前缀下，例如：
+
+- `/opt/homebrew/bin/gws-switch`
+- `/opt/homebrew/bin/gws-switch-gmail`
+- `/opt/homebrew/bin/gws-switch-doctor`
+
+### Local Dev
+
+仅在开发或调试仓库时使用本地安装：
+
 ```bash
 zsh scripts/install-local.sh
 ```
@@ -110,7 +129,7 @@ gws-switch-config-init --force
 If you publish this project, there are two different install surfaces:
 
 1. Local/manual install  
-This uses the same canonical prefixed commands as the published package.
+This is for development only. It uses the same canonical prefixed commands as the published package.
 
 2. Homebrew install  
 The Homebrew formula installs prefixed commands only:
@@ -129,6 +148,8 @@ The Homebrew formula installs prefixed commands only:
 
 This separation is intentional.  
 This avoids shadowing the upstream `gws` binary.
+
+如果你的 shell 里同时存在本地开发版和 brew 版，建议让 dotfiles 优先 source brew 安装目录，避免交互式 shell 和非交互式 shell 指向不同实现。
 
 ## Security Notes
 
@@ -149,4 +170,20 @@ If you publish the repository, also check git author identity, because commit me
 - wraps the upstream binary at `/opt/homebrew/bin/gws`
 - uses upstream keyring/encrypted credential storage
 - keeps dotfiles as a thin compatibility layer only
-- includes a HEAD-only Homebrew formula draft in your tap until a public repo/release exists
+- includes a stable Homebrew formula plus optional `--HEAD` install path for development
+
+## Release Process
+
+```bash
+zsh scripts/package-release.sh
+git tag v0.1.0
+git push origin main --tags
+```
+
+Then update the tap formula with:
+
+- release tarball URL
+- `sha256`
+- `version`
+
+Track released changes in [CHANGELOG.md](./CHANGELOG.md).

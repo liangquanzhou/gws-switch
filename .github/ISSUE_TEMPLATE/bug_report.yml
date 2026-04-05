@@ -1,0 +1,50 @@
+name: Bug Report
+description: Report a broken command, routing issue, or install problem.
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What went wrong?
+      placeholder: Describe the bug in one or two sentences.
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: Paste the relevant environment details.
+      value: |
+        - macOS version:
+        - Homebrew version:
+        - gws version:
+        - gws-switch version:
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: Exact commands and the observed output.
+      placeholder: |
+        1. Run `gws-switch-gmail`
+        2. Run `gws-switch-doctor gmail`
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: Paste sanitized output from `gws-switch-doctor`.
+      render: shell
