@@ -17,6 +17,8 @@ cp -R \
   "${ROOT}/bin" \
   "${ROOT}/src" \
   "${ROOT}/scripts" \
+  "${ROOT}/.github" \
+  "${ROOT}/CHANGELOG.md" \
   "${ROOT}/README.md" \
   "${ROOT}/config.example.json" \
   "${ROOT}/VERSION" \
